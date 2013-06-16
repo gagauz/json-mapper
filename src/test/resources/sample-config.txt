@@ -1,0 +1,4 @@
+net.gagauz.jsonmapper.TestClass {
+	method1 as m1,
+	method2
+}

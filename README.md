@@ -1,4 +1,4 @@
 JsonMapper
 ==========
 
-Easy to use JSON mapper tool
+Easy json mapping tool
