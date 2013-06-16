@@ -23,18 +23,19 @@ package net.gagauz.jsonmapper;
  *
  */
 public class JsonIndentWriter extends JsonWriter {
-    private final StringBuilder sb = new StringBuilder(10000);
+    private final StringBuilder sb = new StringBuilder(100000);
     private final StringBuilder indent = new StringBuilder();
+    private final String tab = "   ";
 
     @Override
     public JsonIndentWriter start() {
-        indent.append("   ");
+        indent.append(tab);
         return this;
     }
 
     @Override
     public JsonIndentWriter finish() {
-        indent.setLength(indent.length() - 3);
+        indent.setLength(indent.length() - tab.length());
         nl();
         return this;
     }
