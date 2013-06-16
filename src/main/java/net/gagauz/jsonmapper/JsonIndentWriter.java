@@ -25,7 +25,7 @@ package net.gagauz.jsonmapper;
 public class JsonIndentWriter extends JsonWriter {
     private final StringBuilder sb = new StringBuilder(100000);
     private final StringBuilder indent = new StringBuilder();
-    private final String tab = "        ";
+    private final String tab = "  ";
 
     @Override
     public JsonIndentWriter start() {
