@@ -18,30 +18,29 @@
  */
 package net.gagauz.jsonmapper;
 
-import java.io.InputStream;
-import java.util.*;
-import java.util.Map.Entry;
+import static net.gagauz.jsonmapper.Reflector.isArray;
+import static net.gagauz.jsonmapper.Reflector.isIterable;
+import static net.gagauz.jsonmapper.Reflector.isIterator;
+import static net.gagauz.jsonmapper.Reflector.isMap;
+import static net.gagauz.jsonmapper.Reflector.isPrimitive;
+import static net.gagauz.jsonmapper.Reflector.isString;
 
-import static net.gagauz.jsonmapper.Reflector.*;
+import java.io.Writer;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class JsonMapper {
 
-    public Set<String> REGISTRY = new HashSet<String>();
-
-    private boolean register(Object object) {
-        if (null == object) {
-            return true;
-        }
-        Class<?> cls = object.getClass();
-        if (isString(cls) || isPrimitive(cls)) {
-            return true;
-        }
-        String hash = cls.getName() + '#' + object.hashCode();
-        return REGISTRY.add(hash);
+    private boolean isCycleRefference(Object object, String parent) {
+        String hash = object.getClass().getName() + '#' + object.hashCode() + '>';
+        return parent.contains(hash);
     }
 
-    private static final String SQT = "\"";
-    private static final String ESQT = "\\\"";
+    private static final char SQT = '"';
 
     private final Set<String> errorMethodCache = new HashSet<String>(50);
 
@@ -55,31 +54,26 @@ public class JsonMapper {
         return new JsonMapper(JsonMapperConfig.init());
     }
 
-    public static JsonMapper instanse(InputStream stream) throws Exception {
-        return new JsonMapper(JsonMapperConfig.init(stream));
-    }
-
     public static JsonMapper instanse(JsonMapperConfig config) throws Exception {
         return new JsonMapper(config);
     }
 
-    private JsonIndentWriter sb = new JsonIndentWriter();
+    private JsonWriter sb;
 
-    public String map(Object o) {
+    public void map(Object o, Writer writer) {
         long start = System.currentTimeMillis();
-
+        sb = new JsonWriter(writer);
         try {
             map(o, ">");
+            writer.flush();// Important
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         System.out.println("JSON parsing took " + (System.currentTimeMillis() - start) + " ms");
-        System.out.println("JSON data size " + sb.toString().length() + " b");
-        return sb.toString();
+        System.out.println("JSON data size " + sb.size() + " b");
     }
 
     private void map(final Object o, final String parent) throws Exception {
-
         if (null == o) {
             sb.write("null");
         } else {
@@ -99,33 +93,38 @@ public class JsonMapper {
             } else if (cls.isMemberClass()) {
                 sb.write("{").start().nl();
                 sb.write("'member class " + cls.getName() + "'").nl().finish().write('}');
-            } else if (register(o)) {
-                //if (!parent.contains(cls.getName() + '>')) {
-
-                String hierarchy = "";//parent + cls.getName() + '>';
-
-                Collection<MethodAlias> methods = config.getMethodsForClass(cls);
-
-                if (methods.size() == 1) {
-                    mapMethod(o, methods.iterator().next(), hierarchy, true);
-                } else if (!methods.isEmpty()) {
-                    sb.write("{").start();
-                    sb.nl();
-                    Iterator<MethodAlias> i = methods.iterator();
-                    mapMethod(o, i.next(), hierarchy, false);
-                    while (i.hasNext()) {
-                        sb.write(',').nl();
-                        mapMethod(o, i.next(), hierarchy, false);
-                    }
-                    sb.finish().write("}");
-
-                } else {
-                    sb.write("{}");
-                }
             } else {
-                sb.write("'ref " + o.hashCode() + "'");
+                if ((!isCycleRefference(o, parent))) {
+                    mapObject(o, parent);
+                } else {
+                    sb.write("\"cycle refference\"");
+                }
             }
         }
+    }
+
+    private void mapObject(Object instance, String parent) {
+        String hierarchy = parent + instance.getClass().getName() + '#' + instance.hashCode() + '>';
+
+        Collection<MethodAlias> methods = config.getMethodsForClass(instance.getClass());
+
+        if (methods.size() == 1) {
+            mapMethod(instance, methods.iterator().next(), hierarchy, true);
+        } else if (!methods.isEmpty()) {
+            sb.write("{").start();
+            sb.nl();
+            Iterator<MethodAlias> i = methods.iterator();
+            mapMethod(instance, i.next(), hierarchy, false);
+            while (i.hasNext()) {
+                sb.write(',').nl();
+                mapMethod(instance, i.next(), hierarchy, false);
+            }
+            sb.finish().write("}");
+
+        } else {
+            sb.write("{}");
+        }
+
     }
 
     private void mapMethod(Object instance, MethodAlias m, String hierarchy, boolean collapse) {
@@ -134,21 +133,18 @@ public class JsonMapper {
         if (errorMethodCache.contains(instance.getClass().getName() + '.' + name)) {
             return;
         }
-
+        if (!collapse)
+            sb.write(name).write(":");
         try {
-            if (!collapse)
-                sb.write(name).write(":");
             map(m.getMethod().invoke(instance), hierarchy);
         } catch (Exception e) {
             errorMethodCache.add(instance.getClass().getName() + '.' + name);
-            System.out.println(m);
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
     private void mapString(Object value) {
-        //.replaceAll(SQT, ESQT)
-        sb.write(SQT).write(String.valueOf(value)).write(SQT);
+        sb.write(SQT).write(String.valueOf(value).replace("\"", "\\\"")).write(SQT);
     }
 
     private void mapPrimitive(Object value) {
@@ -192,10 +188,13 @@ public class JsonMapper {
         sb.write("{").start().nl();
         Iterator<Entry> i = value.entrySet().iterator();
         Entry e = i.next();
-        sb.write(e.getKey()).write(':');
+        map(e.getKey(), parent);
+        sb.write(':');
         map(e.getValue(), parent);
         while (i.hasNext()) {
-            sb.write(',').write(e.getKey()).write(':');
+            sb.write(',');
+            map(e.getKey(), parent);
+            sb.write(':');
             map(e.getValue(), parent);
         }
         sb.finish().write("}");

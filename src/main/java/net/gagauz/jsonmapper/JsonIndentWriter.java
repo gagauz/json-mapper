@@ -18,14 +18,19 @@
  */
 package net.gagauz.jsonmapper;
 
+import java.io.Writer;
+
 /**
- * Wrapper around {@link JsonWriter} to indent JSON text 
- *
+ * Wrapper around {@link JsonWriter} to indent JSON text
+ * 
  */
 public class JsonIndentWriter extends JsonWriter {
-    private final StringBuilder sb = new StringBuilder(100000);
     private final StringBuilder indent = new StringBuilder();
     private final String tab = "  ";
+
+    public JsonIndentWriter(Writer writer) {
+        super(writer);
+    }
 
     @Override
     public JsonIndentWriter start() {
@@ -41,29 +46,9 @@ public class JsonIndentWriter extends JsonWriter {
     }
 
     @Override
-    public JsonIndentWriter write(Object o) {
-        sb.append(o);
-        return this;
-    }
-
-    @Override
     public JsonIndentWriter nl() {
-        sb.append("\n").append(indent);
+        write("\n").write(indent.toString());
         return this;
     }
 
-    @Override
-    public String toString() {
-        return sb.toString();
-    }
-
-    @Override
-    public int size() {
-        return sb.length();
-    }
-
-    @Override
-    public String copy(int off) {
-        return sb.substring(off + 1);
-    }
 }

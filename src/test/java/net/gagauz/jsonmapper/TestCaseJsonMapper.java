@@ -18,11 +18,13 @@
  */
 package net.gagauz.jsonmapper;
 
+import java.io.StringWriter;
+
 public class TestCaseJsonMapper {
 
     public static void testSpeed() throws Exception {
         String configString = TestClass.class.getName() + "{method1, parent, children}";
-        JsonMapper mapper = JsonMapper.instanse();//(JsonMapperConfig.init(configString));
+        JsonMapper mapper = JsonMapper.instanse();// (JsonMapperConfig.init(configString));
 
         TestClass t = new TestClass();
         for (int i = 0; i < 10; i++) {
@@ -35,23 +37,25 @@ public class TestCaseJsonMapper {
             }
         }
 
-        String json = mapper.map(t);
+        StringWriter sw = new StringWriter();
+        mapper.map(t, sw);
+        String json = sw.toString();
         System.out.println(json.toString());
     }
 
     public void testConfigMapping() throws Exception {
         String configString = TestClass.class.getName() + "{method1 as m1, method2 as m2}";
         JsonMapper mapper = JsonMapper.instanse(JsonMapperConfig.init(configString));
-
-        String json = mapper.map(new TestClass());
-        System.out.println(json);
-        assert json.replaceAll("[\\t\\s\\n]", "").equals("{m1:'abc',m2:1}");
+        StringWriter sw = new StringWriter();
+        mapper.map(new TestClass(), sw);
+        System.out.println(sw.toString());
+        assert sw.toString().replaceAll("[\\t\\s\\n]", "").equals("{m1:'abc',m2:1}");
 
     }
 
     public static void main(String[] args) throws Exception {
-        //        TestCaseJsonMapper c = new TestCaseJsonMapper();
-        //        c.testConfigMapping();
+        // TestCaseJsonMapper c = new TestCaseJsonMapper();
+        // c.testConfigMapping();
         while (true)
             testSpeed();
     }

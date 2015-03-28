@@ -18,19 +18,27 @@
  */
 package net.gagauz.jsonmapper;
 
-import com.sun.org.apache.bcel.internal.generic.Type;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.org.apache.bcel.internal.generic.Type;
+
 public class JsonMapperConfig {
 
-    protected final Map<Class<?>, Collection<MethodAlias>> methodsToClass = new HashMap<Class<?>, Collection<MethodAlias>>();
+    protected final Map<String, Collection<MethodAlias>> methodsToClass = new HashMap<String, Collection<MethodAlias>>();
 
     private final static Pattern pattern = Pattern.compile("(?i)(?:([a-z0-9_\\.]++)\\s*\\{([^}]++)\\})");
 
@@ -50,17 +58,23 @@ public class JsonMapperConfig {
     }
 
     public Collection<MethodAlias> getMethodsForClass(Class<?> clazz) {
-        Collection<MethodAlias> result = methodsToClass.get(clazz);
-        if (null != result) {
-            return result;
+        String clsName = clazz.getName();
+        int pos = clsName.indexOf("_$$_javassist");
+        if (pos > 0) {
+            clsName = clsName.substring(0, pos);
         }
-        return Collections.<MethodAlias>emptyList();
+        Collection<MethodAlias> result = methodsToClass.get(clsName);
+        if (null == result) {
+            String config = configMap.get(clsName);
+            result = parseClass(clazz, clsName, String.valueOf(config));
+        }
+        return result;
     }
 
     private static class DefaultJsonConfig extends JsonMapperConfig {
         @Override
         public Collection<MethodAlias> getMethodsForClass(Class<?> clazz) {
-            Collection<MethodAlias> result = methodsToClass.get(clazz);
+            Collection<MethodAlias> result = methodsToClass.get(clazz.getName());
             if (null == result) {
 
                 result = new HashSet<MethodAlias>();
@@ -76,16 +90,14 @@ public class JsonMapperConfig {
                     }
                 }
 
-                methodsToClass.put(clazz, result);
+                methodsToClass.put(clazz.getName(), result);
             }
             return result;
         }
     }
 
-    private void parseClass(String className, String string) throws Exception {
-        Class<?> clazz = null;
+    private Set<MethodAlias> parseClass(Class<?> clazz, String clsName, String string) {
         try {
-            clazz = Thread.currentThread().getContextClassLoader().loadClass(className.trim());
             System.out.println("Configure " + clazz);
             Set<MethodAlias> methodsToPut = new LinkedHashSet<MethodAlias>();
 
@@ -95,6 +107,9 @@ public class JsonMapperConfig {
                 String name = method.getName();
                 if (name.startsWith("get")) {
                     name = Character.toLowerCase(name.charAt(3)) + name.substring(4);
+                } else if (name.startsWith("is")
+                        && (method.getReturnType().equals(Boolean.class) || method.getReturnType().equals(boolean.class))) {
+                    name = Character.toLowerCase(name.charAt(2)) + name.substring(3);
                 }
                 for (final String configMethod : configMethods) {
                     String[] altNames = configMethod.split(" as ");
@@ -110,27 +125,26 @@ public class JsonMapperConfig {
                 }
             }
 
-            if (!methodsToPut.isEmpty()) {
-                methodsToClass.put(clazz, methodsToPut);
-            }
+            methodsToClass.put(clsName, methodsToPut);
             if (!configMethods.isEmpty()) {
-                String error = "Config for class " + className + " contains undeclared methods : ";
+                String error = "Config for class " + clazz + " contains undeclared methods : ";
                 for (String name : configMethods) {
                     error += name + ", ";
                 }
                 throw new IllegalArgumentException(error);
             }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Unable to load class " + className);
+            return methodsToPut;
         } catch (Exception e) {
-            throw e;
+            throw new RuntimeException(e);
         }
     }
+
+    private final Map<String, String> configMap = new HashMap<>();
 
     private void parseString(String config) throws Exception {
         Matcher match = pattern.matcher(config);
         while (match.find()) {
-            parseClass(match.group(1), match.group(2));
+            configMap.put(match.group(1), match.group(2));
         }
     }
 

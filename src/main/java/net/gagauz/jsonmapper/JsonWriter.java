@@ -18,12 +18,20 @@
  */
 package net.gagauz.jsonmapper;
 
+import java.io.IOException;
+import java.io.Writer;
+
 /**
  * Simple class wrapper around StringBuilder
- *
+ * 
  */
 public class JsonWriter {
-    private final StringBuilder sb = new StringBuilder(10000);
+    private int size;
+    private final Writer writer;
+
+    public JsonWriter(Writer writer) {
+        this.writer = writer;
+    }
 
     public JsonWriter start() {
         return this;
@@ -33,8 +41,23 @@ public class JsonWriter {
         return this;
     }
 
-    public JsonWriter write(Object o) {
-        sb.append(o);
+    public JsonWriter write(String o) {
+        try {
+            size += o.length();
+            writer.append(o);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+
+    public JsonWriter write(char o) {
+        try {
+            size++;
+            writer.append(o);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 
@@ -42,16 +65,8 @@ public class JsonWriter {
         return this;
     }
 
-    @Override
-    public String toString() {
-        return sb.toString();
-    }
-
     public int size() {
-        return sb.length();
+        return size;
     }
 
-    public String copy(int off) {
-        return sb.substring(off + 1);
-    }
 }

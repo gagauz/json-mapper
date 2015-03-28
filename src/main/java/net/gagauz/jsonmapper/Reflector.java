@@ -18,6 +18,11 @@
  */
 package net.gagauz.jsonmapper;
 
+import static java.lang.reflect.Modifier.ABSTRACT;
+import static java.lang.reflect.Modifier.PRIVATE;
+import static java.lang.reflect.Modifier.PROTECTED;
+import static java.lang.reflect.Modifier.STATIC;
+
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -25,25 +30,22 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static java.lang.reflect.Modifier.*;
-
 /**
- * Tools for class reflection 
- *
+ * Tools for class reflection
+ * 
  */
 public class Reflector {
 
     private static final int EXCLUDED = ABSTRACT | PRIVATE | PROTECTED | STATIC;
 
     public static boolean isPrimitive(Class<?> clazz) {
-        return clazz.isPrimitive() || Long.class.equals(clazz) || Byte.class.equals(clazz) || Float.class.equals(clazz) || Integer.class.equals(clazz)
-                || Double.class.equals(clazz)
-                || Boolean.class.equals(clazz)
+        return clazz.isPrimitive() || Long.class.equals(clazz) || Byte.class.equals(clazz) || Float.class.equals(clazz)
+                || Integer.class.equals(clazz) || Double.class.equals(clazz) || Boolean.class.equals(clazz)
                 || BigDecimal.class.equals(clazz);
     }
 
     public static boolean isString(Class<?> clazz) {
-        return String.class.equals(clazz);
+        return String.class.equals(clazz) || clazz.isEnum();
     }
 
     public static boolean isArray(Class<?> clazz) {
@@ -51,7 +53,7 @@ public class Reflector {
     }
 
     public static boolean isIterable(Class<?> clazz) {
-        return Collection.class.isAssignableFrom(clazz);
+        return Iterable.class.isAssignableFrom(clazz);
     }
 
     public static boolean isMap(Class<?> clazz) {
@@ -72,14 +74,13 @@ public class Reflector {
         }
         for (Method m : clazz.getDeclaredMethods()) {
             String name = m.getName();
-            if (!result.containsKey(name) && !name.equals("hashCode") && !name.equals("getClass") && !name.equals("toString")
-                    && m.getParameterTypes().length == 0
-                    && !m.isSynthetic() && !m.getReturnType().equals(Void.TYPE) && (m.getModifiers() & EXCLUDED) == 0) {
+            if (!result.containsKey(name) && !name.equals("getClass") && m.getParameterTypes().length == 0 && !m.isSynthetic()
+                    && !m.getReturnType().equals(Void.TYPE) && (m.getModifiers() & EXCLUDED) == 0) {
                 result.put(name, m);
             }
         }
         Class<?> superClazz = clazz.getSuperclass();
-        if (superClazz != null && superClazz.getName().startsWith("ru.kupi") && level < 5) {
+        if (superClazz != null) {
             fetchMethods(superClazz, result, level + 1);
         }
         return result.values();
