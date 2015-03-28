@@ -20,6 +20,25 @@ package net.gagauz.jsonmapper;
 
 public class TestCaseJsonMapper {
 
+    public static void testSpeed() throws Exception {
+        String configString = TestClass.class.getName() + "{method1, parent, children}";
+        JsonMapper mapper = JsonMapper.instanse();//(JsonMapperConfig.init(configString));
+
+        TestClass t = new TestClass();
+        for (int i = 0; i < 10; i++) {
+            TestClass t2 = new TestClass(t);
+            for (int i1 = 0; i1 < 10; i1++) {
+                TestClass t3 = new TestClass(t2);
+                for (int i2 = 0; i2 < 10; i2++) {
+                    TestClass t4 = new TestClass(t3);
+                }
+            }
+        }
+
+        String json = mapper.map(t);
+        System.out.println(json.toString());
+    }
+
     public void testConfigMapping() throws Exception {
         String configString = TestClass.class.getName() + "{method1 as m1, method2 as m2}";
         JsonMapper mapper = JsonMapper.instanse(JsonMapperConfig.init(configString));
@@ -31,7 +50,9 @@ public class TestCaseJsonMapper {
     }
 
     public static void main(String[] args) throws Exception {
-        TestCaseJsonMapper c = new TestCaseJsonMapper();
-        c.testConfigMapping();
+        //        TestCaseJsonMapper c = new TestCaseJsonMapper();
+        //        c.testConfigMapping();
+        while (true)
+            testSpeed();
     }
 }

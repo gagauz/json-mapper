@@ -32,13 +32,13 @@ public class MethodAlias {
     public MethodAlias(Method m, String... altNames) {
         System.out.print("   " + altNames[0]);
         if (altNames.length > 1) {
-            aliasName = altNames[1];
+            aliasName = '"' + altNames[1] + '"';
             if (null == aliasName || "".equals(aliasName)) {
                 throw new IllegalArgumentException("Empty alias name for method " + m);
             }
             System.out.print(" as " + aliasName);
         } else {
-            aliasName = altNames[0];
+            aliasName = '"' + altNames[0] + '"';
         }
         System.out.println("");
         method = m;

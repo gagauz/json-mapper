@@ -26,7 +26,22 @@ import static net.gagauz.jsonmapper.Reflector.*;
 
 public class JsonMapper {
 
-    private static final char SQT = '\'';
+    public Set<String> REGISTRY = new HashSet<String>();
+
+    private boolean register(Object object) {
+        if (null == object) {
+            return true;
+        }
+        Class<?> cls = object.getClass();
+        if (isString(cls) || isPrimitive(cls)) {
+            return true;
+        }
+        String hash = cls.getName() + '#' + object.hashCode();
+        return REGISTRY.add(hash);
+    }
+
+    private static final String SQT = "\"";
+    private static final String ESQT = "\\\"";
 
     private final Set<String> errorMethodCache = new HashSet<String>(50);
 
@@ -48,11 +63,13 @@ public class JsonMapper {
         return new JsonMapper(config);
     }
 
+    private JsonIndentWriter sb = new JsonIndentWriter();
+
     public String map(Object o) {
         long start = System.currentTimeMillis();
-        JsonIndentWriter sb = new JsonIndentWriter();
+
         try {
-            map(o, sb, ">");
+            map(o, ">");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -61,49 +78,57 @@ public class JsonMapper {
         return sb.toString();
     }
 
-    private void map(final Object o, final JsonIndentWriter sb, final String parent) throws Exception {
+    private void map(final Object o, final String parent) throws Exception {
 
         if (null == o) {
             sb.write("null");
-        } else if (isPrimitive(o.getClass())) {
-            mapPrimitive(o, sb);
-        } else if (isString(o.getClass())) {
-            mapString(o, sb);
-        } else if (isIterator(o.getClass())) {
-            mapIterator((Iterator<?>) o, sb, parent);
-        } else if (isMap(o.getClass())) {
-            mapMap((Map<?, ?>) o, sb, parent);
-        } else if (isIterable(o.getClass())) {
-            mapIterator(((Iterable<?>) o).iterator(), sb, parent);
-        } else if (isArray(o.getClass())) {
-            mapArray((Object[]) o, sb, parent);
-        } else if (o.getClass().isMemberClass()) {
-            return;
         } else {
-            if (!parent.contains(o.getClass().getName() + '>')) {
+            Class<?> cls = o.getClass();
+            if (isPrimitive(cls)) {
+                mapPrimitive(o);
+            } else if (isString(cls)) {
+                mapString(o);
+            } else if (isIterator(cls)) {
+                mapIterator((Iterator<?>) o, parent);
+            } else if (isMap(cls)) {
+                mapMap((Map<?, ?>) o, parent);
+            } else if (isIterable(cls)) {
+                mapIterator(((Iterable<?>) o).iterator(), parent);
+            } else if (isArray(cls)) {
+                mapArray((Object[]) o, parent);
+            } else if (cls.isMemberClass()) {
+                sb.write("{").start().nl();
+                sb.write("'member class " + cls.getName() + "'").nl().finish().write('}');
+            } else if (register(o)) {
+                //if (!parent.contains(cls.getName() + '>')) {
 
-                String hierarchy = "";//parent + o.getClass().getName() + '>';
+                String hierarchy = "";//parent + cls.getName() + '>';
 
-                Collection<MethodAlias> methods = config.getMethodsForClass(o.getClass());
+                Collection<MethodAlias> methods = config.getMethodsForClass(cls);
 
-                if (!methods.isEmpty()) {
+                if (methods.size() == 1) {
+                    mapMethod(o, methods.iterator().next(), hierarchy, true);
+                } else if (!methods.isEmpty()) {
                     sb.write("{").start();
                     sb.nl();
                     Iterator<MethodAlias> i = methods.iterator();
-                    mapMethod(o, i.next(), sb, hierarchy);
+                    mapMethod(o, i.next(), hierarchy, false);
                     while (i.hasNext()) {
-                        mapMethod(o, i.next(), sb.write(',').nl(), hierarchy);
+                        sb.write(',').nl();
+                        mapMethod(o, i.next(), hierarchy, false);
                     }
                     sb.finish().write("}");
-                }
 
+                } else {
+                    sb.write("{}");
+                }
             } else {
-                sb.write("{}");
+                sb.write("'ref " + o.hashCode() + "'");
             }
         }
     }
 
-    private void mapMethod(Object instance, MethodAlias m, JsonIndentWriter sb, String hierarchy) throws Exception {
+    private void mapMethod(Object instance, MethodAlias m, String hierarchy, boolean collapse) {
 
         String name = m.getAliasName();
         if (errorMethodCache.contains(instance.getClass().getName() + '.' + name)) {
@@ -111,8 +136,9 @@ public class JsonMapper {
         }
 
         try {
-            sb.write(name).write(":");
-            map(m.getMethod().invoke(instance), sb, hierarchy);
+            if (!collapse)
+                sb.write(name).write(":");
+            map(m.getMethod().invoke(instance), hierarchy);
         } catch (Exception e) {
             errorMethodCache.add(instance.getClass().getName() + '.' + name);
             System.out.println(m);
@@ -120,42 +146,45 @@ public class JsonMapper {
         }
     }
 
-    private void mapString(Object value, JsonIndentWriter sb) {
-        sb.write(SQT).write(String.valueOf(value).replaceAll("'", "\'")).write(SQT);
+    private void mapString(Object value) {
+        //.replaceAll(SQT, ESQT)
+        sb.write(SQT).write(String.valueOf(value)).write(SQT);
     }
 
-    private void mapPrimitive(Object value, JsonIndentWriter sb) {
+    private void mapPrimitive(Object value) {
         sb.write(String.valueOf(value));
     }
 
-    private void mapArray(Object[] value, JsonIndentWriter sb, String parent) throws Exception {
+    private void mapArray(Object[] value, String parent) throws Exception {
         if (value.length == 0) {
             sb.write("[]");
             return;
         }
         sb.write("[").start().nl();
-        map(value[0], sb, parent);
+        map(value[0], parent);
         for (int i = 1; i < value.length; i++) {
-            map(value[i], sb.write(','), parent);
+            sb.write(',');
+            map(value[i], parent);
         }
         sb.finish().write("]");
 
     }
 
-    private void mapIterator(Iterator<?> value, JsonIndentWriter sb, String parent) throws Exception {
+    private void mapIterator(Iterator<?> value, String parent) throws Exception {
         if (!value.hasNext()) {
             sb.write("[]");
             return;
         }
         sb.write("[").start().nl();
-        map(value.next(), sb, parent);
+        map(value.next(), parent);
         while (value.hasNext()) {
-            map(value.next(), sb.write(','), parent);
+            sb.write(',');
+            map(value.next(), parent);
         }
         sb.finish().write("]");
     }
 
-    private void mapMap(Map value, JsonIndentWriter sb, String parent) throws Exception {
+    private void mapMap(Map value, String parent) throws Exception {
         if (value.isEmpty()) {
             sb.write("{}");
             return;
@@ -164,10 +193,10 @@ public class JsonMapper {
         Iterator<Entry> i = value.entrySet().iterator();
         Entry e = i.next();
         sb.write(e.getKey()).write(':');
-        map(e.getValue(), sb, parent);
+        map(e.getValue(), parent);
         while (i.hasNext()) {
             sb.write(',').write(e.getKey()).write(':');
-            map(e.getValue(), sb, parent);
+            map(e.getValue(), parent);
         }
         sb.finish().write("}");
     }

@@ -18,6 +18,8 @@
  */
 package net.gagauz.jsonmapper;
 
+import com.sun.org.apache.bcel.internal.generic.Type;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -65,11 +67,13 @@ public class JsonMapperConfig {
 
                 for (Method method : Reflector.getMethods(clazz)) {
                     String name = method.getName();
-                    if (name.startsWith("get")) {
-                        name = Character.toLowerCase(name.charAt(3)) + name.substring(4);
-                    }
 
-                    result.add(new MethodAlias(method, name));
+                    if (!method.getReturnType().equals(Type.VOID) && method.getParameterTypes().length == 0) {
+                        if (name.startsWith("get")) {
+                            name = Character.toLowerCase(name.charAt(3)) + name.substring(4);
+                        }
+                        result.add(new MethodAlias(method, name));
+                    }
                 }
 
                 methodsToClass.put(clazz, result);
