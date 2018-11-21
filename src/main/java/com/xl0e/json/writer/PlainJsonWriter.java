@@ -85,7 +85,6 @@ public class PlainJsonWriter implements JsonWriter {
 
     @Override
     public JsonWriter comma() {
-        //        write(',');
         comma = true;
         name = false;
         return this;

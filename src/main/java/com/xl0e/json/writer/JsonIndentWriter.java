@@ -18,7 +18,6 @@
  */
 package com.xl0e.json.writer;
 
-import java.io.IOException;
 import java.io.Writer;
 
 /**
@@ -36,6 +35,7 @@ public class JsonIndentWriter extends PlainJsonWriter {
     @Override
     public PlainJsonWriter write(String o) {
         writeComma();
+        writeIndent();
         writeRaw(o);
         return this;
     }
@@ -51,6 +51,7 @@ public class JsonIndentWriter extends PlainJsonWriter {
 
     @Override
     public JsonWriter openObj() {
+        writeComma();
         writeIndent();
         super.openObj();
         writeRaw('\n');
@@ -99,17 +100,9 @@ public class JsonIndentWriter extends PlainJsonWriter {
     }
 
     protected void writeIndent() {
-        if (!name)
-            try {
-                name = false;
-                writer.write(indent.toString());
-            } catch (IOException e) {
-            }
-    }
-
-    @Override
-    public JsonWriter comma() {
-        super.comma();
-        return this;
+        if (!name) {
+            name = false;
+            writeRaw(indent.toString());
+        }
     }
 }
