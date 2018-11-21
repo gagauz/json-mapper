@@ -1,22 +1,22 @@
 /*
  *  Copyright 2013 Michael Gagauz
  *  
- *  This file is part of JsonMapper.
+ *  This file is part of JsonMapperImpl.
  *
- *  JsonMapper is free software: you can redistribute it and/or modify
+ *  JsonMapperImpl is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  JsonMapper is distributed in the hope that it will be useful,
+ *  JsonMapperImpl is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser General Public License for more details.
  *  
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with JsonMapper.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with JsonMapperImpl.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.gagauz.jsonmapper;
+package com.xl0e.json.mapper;
 
 import static java.lang.reflect.Modifier.ABSTRACT;
 import static java.lang.reflect.Modifier.PRIVATE;
@@ -34,7 +34,7 @@ import java.util.Map;
  * Tools for class reflection
  * 
  */
-public class Reflector {
+public class ReflectionUtils {
 
     private static final int EXCLUDED = ABSTRACT | PRIVATE | PROTECTED | STATIC;
 

@@ -1,4 +1,4 @@
-net.gagauz.jsonmapper.TestClass {
+com.xl0e.json.mapper.TestClass {
 	method1 as m1,
 	method2
 }

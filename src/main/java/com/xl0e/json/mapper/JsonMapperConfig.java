@@ -1,28 +1,27 @@
 /*
  *  Copyright 2013 Michael Gagauz
- *  
- *  This file is part of JsonMapper.
  *
- *  JsonMapper is free software: you can redistribute it and/or modify
+ *  This file is part of JsonMapperImpl.
+ *
+ *  JsonMapperImpl is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  JsonMapper is distributed in the hope that it will be useful,
+ *  JsonMapperImpl is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with JsonMapper.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with JsonMapperImpl.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.gagauz.jsonmapper;
+package com.xl0e.json.mapper;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,12 +32,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.sun.org.apache.bcel.internal.generic.Type;
 
 public class JsonMapperConfig {
 
-    protected final Map<String, Collection<MethodAlias>> methodsToClass = new HashMap<String, Collection<MethodAlias>>();
+    protected final Map<String, Collection<MethodAlias>> methodsToClass = new HashMap<>();
 
     private final static Pattern pattern = Pattern.compile("(?i)(?:([a-z0-9_\\.]++)\\s*\\{([^}]++)\\})");
 
@@ -66,7 +66,7 @@ public class JsonMapperConfig {
         Collection<MethodAlias> result = methodsToClass.get(clsName);
         if (null == result) {
             String config = configMap.get(clsName);
-            result = parseClass(clazz, clsName, String.valueOf(config));
+            result = parseClass(clazz, clsName, config);
         }
         return result;
     }
@@ -77,9 +77,9 @@ public class JsonMapperConfig {
             Collection<MethodAlias> result = methodsToClass.get(clazz.getName());
             if (null == result) {
 
-                result = new HashSet<MethodAlias>();
+                result = new HashSet<>();
 
-                for (Method method : Reflector.getMethods(clazz)) {
+                for (Method method : ReflectionUtils.getMethods(clazz)) {
                     String name = method.getName();
 
                     if (!method.getReturnType().equals(Type.VOID) && method.getParameterTypes().length == 0) {
@@ -99,11 +99,11 @@ public class JsonMapperConfig {
     private Set<MethodAlias> parseClass(Class<?> clazz, String clsName, String string) {
         try {
             System.out.println("Configure " + clazz);
-            Set<MethodAlias> methodsToPut = new LinkedHashSet<MethodAlias>();
+            Set<MethodAlias> methodsToPut = new LinkedHashSet<>();
 
-            final List<String> configMethods = new ArrayList<String>(Arrays.asList(string.split("\\s*,\\s*")));
+            final List<String> configMethods = Arrays.asList(string.split("\\s*,\\s*")).stream().map(String::trim).collect(Collectors.toList());
 
-            for (Method method : Reflector.getMethods(clazz)) {
+            for (Method method : ReflectionUtils.getMethods(clazz)) {
                 String name = method.getName();
                 if (name.startsWith("get")) {
                     name = Character.toLowerCase(name.charAt(3)) + name.substring(4);
