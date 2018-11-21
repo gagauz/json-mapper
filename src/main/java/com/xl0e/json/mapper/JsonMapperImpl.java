@@ -103,10 +103,6 @@ public class JsonMapperImpl implements JsonMapper {
                 mapIterator(((Iterable<?>) o).iterator());
             } else if (isArray(cls)) {
                 mapArray((Object[]) o);
-            } else if (cls.isMemberClass()) {
-                writer.openObj();
-                writer.write("'member class " + cls.getName() + "'");
-                writer.closeObj();
             } else {
                 if (!hierarchy.contains(cls)) {
                     hierarchy.addLast(cls);

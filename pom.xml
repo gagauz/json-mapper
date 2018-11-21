@@ -1,32 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
+>
 	<modelVersion>4.0.0</modelVersion>
-
 	<groupId>net.gagauz</groupId>
 	<artifactId>json-mapper</artifactId>
 	<name>JsonMapper</name>
 	<version>1.0</version>
 	<packaging>jar</packaging>
-<distributionManagement>
-		<repository>
-			<id>sourceforge</id>
-			<name>SourceForge</name>
-			<url>scpexe://xl0e,tapestrysecurity@shell.sourceforge.net:/home/project-web/tapestrysecurity/htdocs/maven_repo</url>
-		</repository>
-	</distributionManagement>
-
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<argLine>-enableassertions</argLine>
-					<includes>
-						<include>**/*/TestCase*.java</include>
-					</includes>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-eclipse-plugin</artifactId>
@@ -38,21 +23,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-ssh-external</artifactId>
-				<version>2.6</version>
-			</extension>
-		</extensions>
 	</build>
-	<repositories>
-		<!-- This repository is only needed when the Tapestry version is a preview release, rather than a final release. -->
-		<repository>
-			<id>apache-staging</id>
-			<url>https://repository.apache.org/content/groups/staging/</url>
-		</repository>
-	</repositories>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.6</maven.compiler.source>

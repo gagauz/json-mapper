@@ -1,6 +1,6 @@
 /*
  *  Copyright 2013 Michael Gagauz
- *  
+ *
  *  This file is part of JsonMapperImpl.
  *
  *  JsonMapperImpl is free software: you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with JsonMapperImpl.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -20,9 +20,6 @@ package com.xl0e.json.mapper;
 
 import java.io.InputStream;
 import java.util.Collection;
-
-import com.xl0e.json.mapper.JsonMapperConfig;
-import com.xl0e.json.mapper.MethodAlias;
 
 public class TestCaseJsonConfig {
 

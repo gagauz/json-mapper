@@ -21,6 +21,7 @@ package com.xl0e.json.mapper;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,8 +31,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.sun.org.apache.bcel.internal.generic.Type;
@@ -39,21 +38,21 @@ import com.sun.org.apache.bcel.internal.generic.Type;
 public class JsonMapperConfig {
 
     protected final Map<String, Collection<MethodAlias>> methodsToClass = new HashMap<>();
-
-    private final static Pattern pattern = Pattern.compile("(?i)(?:([a-z0-9_\\.]++)\\s*\\{([^}]++)\\})");
+    private final Map<String, String> configMap = new HashMap<>();
 
     public static JsonMapperConfig init() {
         return new DefaultJsonConfig();
     }
 
     public static JsonMapperConfig init(InputStream is) throws Exception {
-        String config = readStream(is);
-        return init(config);
+        JsonMapperConfig instance = new JsonMapperConfig();
+        instance.parseStream(new InputStreamReader(is));
+        return instance;
     }
 
     public static JsonMapperConfig init(String config) throws Exception {
         JsonMapperConfig instance = new JsonMapperConfig();
-        instance.parseString(config);
+        instance.parseStream(new StringReader(config));
         return instance;
     }
 
@@ -135,36 +134,18 @@ public class JsonMapperConfig {
             }
             return methodsToPut;
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    private final Map<String, String> configMap = new HashMap<>();
-
-    private void parseString(String config) throws Exception {
-        Matcher match = pattern.matcher(config);
-        while (match.find()) {
-            configMap.put(match.group(1), match.group(2));
-        }
+    private void parseStream(Reader reader) throws Exception {
+        Parser parser = new Parser(reader);
+        final String[] name = { "" };
+        parser
+                .onDelimiter('{', s -> name[0] = s.trim())
+                .onDelimiter('}', s -> configMap.put(name[0], s.trim()))
+                .parse();
     }
 
-    private static String readStream(final InputStream is) {
-        final char[] buffer = new char[10];
-        final StringBuilder out = new StringBuilder();
-        try {
-            final Reader in = new InputStreamReader(is, "UTF-8");
-            try {
-                int rsz = 0;
-                while (rsz >= 0) {
-                    out.append(buffer, 0, rsz);
-                    rsz = in.read(buffer, 0, buffer.length);
-                }
-            } finally {
-                in.close();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return out.toString();
-    }
 }
